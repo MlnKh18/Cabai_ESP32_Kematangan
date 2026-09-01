@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cabai IoT - Clean Smart Farm Dashboard</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Clean CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="app-layout">
+        
+        <!-- Header / Navigation Bar -->
+        <header class="navbar">
+            <div class="nav-brand">
+                <div class="brand-logo">
+                    <i class="fa-solid fa-pepper-hot"></i>
+                </div>
+                <div class="brand-title">
+                    <span class="title-main">CABAI<span>.IOT</span></span>
+                    <span class="title-sub">Local Farm & AI Telemetry</span>
+                </div>
+            </div>
+
+            <div class="nav-meta">
+                <div class="status-pill" id="esp-status-pill">
+                    <span class="dot online" id="connection-badge"></span>
+                    <span id="esp32-status-text">ESP32 Online</span>
+                </div>
+                <div class="time-box">
+                    <i class="fa-regular fa-clock"></i>
+                    <span id="current-time">00:00:00</span>
+                </div>
+                <button class="btn-icon" id="btn-manual-refresh" title="Refresh Data">
+                    <i class="fa-solid fa-rotate-right"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Content -->
+        <main class="content-container">
+            
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h2>Monitoring Lingkungan, Kamera Live & Analisis AI</h2>
+                    <p class="subtitle">Sistem Pemantauan Kebun Cabai & Kamera ESP32-CAM WROVER</p>
+                </div>
+            </div>
+
+            <!-- 1. Live ESP32-CAM Stream & AI Detection Panel -->
+            <section class="camera-grid">
+                <div class="panel-box camera-panel">
+                    <div class="panel-head">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-camera"></i>
+                            <div>
+                                <h3>ESP32-CAM Live Feed & Analisis AI</h3>
+                                <p>Live stream kamera kebun cabai dan tombol ambil foto otomatis</p>
+                            </div>
+                        </div>
+                        <span class="mode-pill" id="cam-status-pill"><i class="fa-solid fa-circle-dot"></i> Live Stream</span>
+                    </div>
+
+                    <div class="panel-body camera-body">
+                        
+                        <!-- Left: Live Video Container -->
+                        <div class="camera-stream-wrapper">
+                            <div class="stream-container">
+                                <img id="cam-stream" crossorigin="anonymous" src="/camera/live" alt="ESP32-CAM Stream Standby" onerror="this.onerror=null; this.src='https://placehold.co/600x400/e2e8f0/475569?text=Menunggu+Frame+ESP32-CAM';">
+                                <div class="stream-badge"><i class="fa-solid fa-video"></i> LIVE STREAM</div>
+                            </div>
+                        </div>
+
+                        <!-- Right: AI Control & Results -->
+                        <div class="camera-controls-wrapper">
+                            <div class="capture-action-box">
+                                <h4>Kontrol Tangkapan Kamera & Uji Coba</h4>
+                                <p>Tekan tombol untuk mengambil foto snapshot dari ESP32-CAM atau upload foto lokal dari komputer Anda untuk pengujian AI MobileNetV3.</p>
+                                <div class="action-btn-group">
+                                    <button class="btn-action btn-capture" id="btn-capture-ai">
+                                        <i class="fa-solid fa-camera-retro"></i>
+                                        <span>Ambil Foto ESP32-CAM</span>
+                                    </button>
+                                    
+                                    <input type="file" id="input-upload-file" accept="image/*" style="display: none;">
+                                    <button class="btn-action btn-upload-test" id="btn-upload-test">
+                                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                                        <span>Upload Foto Uji Coba</span>
+                                    </button>
+
+                                    <button class="btn-action btn-reset-live" id="btn-reset-live" style="display: none;">
+                                        <i class="fa-solid fa-arrow-rotate-left"></i>
+                                        <span>Hapus Foto & Kembali ke Live</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="ai-result-card" id="ai-result-box">
+                                <div class="ai-result-head">
+                                    <i class="fa-solid fa-brain"></i>
+                                    <strong>Hasil Diagnosa AI MobileNetV3</strong>
+                                </div>
+                                <div class="ai-result-body">
+                                    <div class="ai-stat-row">
+                                        <span class="stat-lbl">Hasil Klasifikasi:</span>
+                                        <span class="stat-val class-name" id="ai-class-name">Belum Ada Analisis</span>
+                                    </div>
+                                    <div class="ai-stat-row">
+                                        <span class="stat-lbl">Tingkat Kepercayaan:</span>
+                                        <span class="stat-val confidence-val" id="ai-confidence">0.00%</span>
+                                    </div>
+                                    <div class="ai-stat-row">
+                                        <span class="stat-lbl">Waktu Snapshot:</span>
+                                        <span class="stat-val" id="ai-snapshot-time">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2. Sensor Metrics Grid -->
+            <section class="metrics-grid">
+                
+                <!-- Soil Moisture Card -->
+                <div class="metric-card card-primary">
+                    <div class="metric-head">
+                        <span class="metric-label"><i class="fa-solid fa-droplet"></i> Kelembapan Tanah</span>
+                        <span class="status-pill-sub" id="status-soil-desc">KERING ⚠️</span>
+                    </div>
+                    <div class="metric-value">
+                        <span id="val-soil">0</span><span class="unit">%</span>
+                    </div>
+                    <div class="metric-progress">
+                        <div class="progress-fill soil-fill" id="bar-soil" style="width: 0%;"></div>
+                    </div>
+                    <div class="metric-foot">
+                        <span>ADC Range: 1500 - 3400</span>
+                        <span>Amb. Kering: &le; 1500</span>
+                    </div>
+                </div>
+
+                <!-- Temperature Card -->
+                <div class="metric-card">
+                    <div class="metric-head">
+                        <span class="metric-label"><i class="fa-solid fa-temperature-half"></i> Suhu Udara</span>
+                        <span class="status-pill-sub neutral" id="status-temp-desc">DHT11</span>
+                    </div>
+                    <div class="metric-value">
+                        <span id="val-temp">0.0</span><span class="unit">°C</span>
+                    </div>
+                    <div class="metric-progress">
+                        <div class="progress-fill temp-fill" id="bar-temp" style="width: 0%;"></div>
+                    </div>
+                    <div class="metric-foot">
+                        <span>Sensor D23</span>
+                        <span>Ideal: 24°C - 30°C</span>
+                    </div>
+                </div>
+
+                <!-- Humidity Card -->
+                <div class="metric-card">
+                    <div class="metric-head">
+                        <span class="metric-label"><i class="fa-solid fa-wind"></i> Kelembapan Udara</span>
+                        <span class="status-pill-sub neutral" id="status-humidity-desc">DHT11</span>
+                    </div>
+                    <div class="metric-value">
+                        <span id="val-humidity">0</span><span class="unit">%</span>
+                    </div>
+                    <div class="metric-progress">
+                        <div class="progress-fill humidity-fill" id="bar-humidity" style="width: 0%;"></div>
+                    </div>
+                    <div class="metric-foot">
+                        <span>Sensor D23</span>
+                        <span>Ideal: 60% - 80%</span>
+                    </div>
+                </div>
+
+                <!-- Light / ADC Raw Card -->
+                <div class="metric-card">
+                    <div class="metric-head">
+                        <span class="metric-label"><i class="fa-solid fa-sun"></i> Intensitas Cahaya / Raw</span>
+                        <span class="status-pill-sub neutral" id="status-light-desc">Standby</span>
+                    </div>
+                    <div class="metric-value">
+                        <span id="val-light">0</span><span class="unit">Lux</span>
+                    </div>
+                    <div class="metric-progress">
+                        <div class="progress-fill light-fill" id="bar-light" style="width: 0%;"></div>
+                    </div>
+                    <div class="metric-foot">
+                        <span>Input Telemetri</span>
+                        <span>Nilai Lux / Raw</span>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- 3. Controls & Configuration Section -->
+            <section class="controls-grid" id="control-section">
+                
+                <!-- Actuator Controller -->
+                <div class="panel-box">
+                    <div class="panel-head">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-faucet-drip"></i>
+                            <div>
+                                <h3>Kendali Pompa Irigasi</h3>
+                                <p>Pengaturan mode otomatis dan manual override penyiraman</p>
+                            </div>
+                        </div>
+                        <span class="mode-pill" id="mode-badge">Mode Otomatis</span>
+                    </div>
+
+                    <div class="panel-body">
+                        <!-- Switch Row 1: Auto Mode -->
+                        <div class="setting-item">
+                            <div class="setting-desc">
+                                <strong>Mode Irigasi Otomatis</strong>
+                                <span>Menyiram otomatis jika ADC &le; 1500 (Tanah Kering)</span>
+                            </div>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="toggle-auto-mode" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+
+                        <!-- Switch Row 2: Manual Pump -->
+                        <div class="setting-item">
+                            <div class="setting-desc">
+                                <strong>Manual Override Pompa</strong>
+                                <span>Paksa nyalakan atau matikan pompa langsung dari web</span>
+                            </div>
+                            <button class="btn-action" id="btn-toggle-pump">
+                                <i class="fa-solid fa-power-off"></i>
+                                <span id="pump-btn-text">Nyalakan Pompa</span>
+                            </button>
+                        </div>
+
+                        <!-- Pump Status Banner -->
+                        <div class="status-banner idle" id="pump-status-banner">
+                            <div class="banner-icon">
+                                <i class="fa-solid fa-droplet-slash"></i>
+                            </div>
+                            <div class="banner-text">
+                                <h4 id="pump-banner-title">Pompa Standby (Matikan)</h4>
+                                <p id="pump-banner-sub">Sistem siap menerima instruksi otomatis / manual</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Threshold & AI Model Info -->
+                <div class="panel-box">
+                    <div class="panel-head">
+                        <div class="panel-title">
+                            <i class="fa-solid fa-sliders"></i>
+                            <div>
+                                <h3>Ambang Batas & Status AI</h3>
+                                <p>Konfigurasi parameter dan model klasifikasi cabai</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="panel-body">
+                        <div class="setting-slider-group">
+                            <div class="slider-header">
+                                <span>Batas Minimum Penyiraman</span>
+                                <strong id="val-threshold-display">40%</strong>
+                            </div>
+                            <input type="range" id="input-threshold" min="20" max="80" value="40" step="5" class="custom-range">
+                            <p class="slider-hint">Acuan otomatisasi backend (saat ini diset pada threshold <span id="threshold-label">40</span>%)</p>
+                        </div>
+
+                        <div class="ai-info-card">
+                            <div class="ai-icon"><i class="fa-solid fa-microchip"></i></div>
+                            <div class="ai-details">
+                                <strong>MobileNetV3 AI Classifier</strong>
+                                <span>`model_cabe_mobilenet.pth` loaded</span>
+                                <span class="badge-status success"><i class="fa-solid fa-check"></i> PyTorch Inference Engine Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- 4. Real-Time Telemetry Chart -->
+            <section class="panel-box" id="chart-section">
+                <div class="panel-head">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <div>
+                            <h3>Grafik Telemetri Real-Time</h3>
+                            <p>Tren data suhu udara (°C) dan kelembapan tanah (%)</p>
+                        </div>
+                    </div>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-dot temp"></span> Suhu (°C)</span>
+                        <span class="legend-item"><span class="legend-dot soil"></span> Kelembapan Tanah (%)</span>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="chart-box">
+                        <canvas id="telemetryChart"></canvas>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 5. Data Logs Table -->
+            <section class="panel-box" id="log-section">
+                <div class="panel-head">
+                    <div class="panel-title">
+                        <i class="fa-solid fa-table-list"></i>
+                        <div>
+                            <h3>Riwayat Logs Sensor</h3>
+                            <p>Log transmisi 15 telemetry terakhir dari ESP32</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="panel-body no-padding">
+                    <div class="table-container">
+                        <table class="clean-table">
+                            <thead>
+                                <tr>
+                                    <th>Waktu</th>
+                                    <th>Kelembapan Tanah</th>
+                                    <th>Suhu Udara</th>
+                                    <th>Kelembapan Udara</th>
+                                    <th>Cahaya / Raw</th>
+                                    <th>Status Pompa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sensor-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-muted text-center">Memuat data sensor dari server...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

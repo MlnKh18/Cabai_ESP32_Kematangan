@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Klasifikasi Cabai AI</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; padding: 30px; background: #f0f2f5; color: #333; }
+        .container { background: white; padding: 30px; display: inline-block; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
+        
+        /* Area Preview Sebelum Upload */
+        #preview-container { margin: 20px 0; display: none; }
+        #image-preview { max-width: 100%; height: auto; border-radius: 10px; border: 2px dashed #bdc3c7; padding: 5px; }
+        
+        /* Hasil Prediksi */
+        .result-box { margin-top: 25px; padding: 20px; border-radius: 10px; background: #e8f5e9; border: 1px solid #c8e6c9; }
+        .final-img { max-width: 100%; border-radius: 10px; margin-bottom: 15px; border: 3px solid #2ecc71; }
+        
+        .btn { background: #e74c3c; color: white; padding: 12px 25px; border: none; cursor: pointer; border-radius: 5px; font-weight: bold; width: 100%; transition: 0.3s; }
+        .btn:hover { background: #c0392b; }
+        .file-input { margin-bottom: 15px; width: 100%; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌶️ Cabai Classifier</h1>
+        <p>Pilih foto cabai untuk dianalisis</p>
+        
+        <form method="post" enctype="multipart/form-data">
+            <input type="file" name="file" id="file-selector" class="file-input" accept="image/*" required onchange="previewImage(event)">
+            
+            <div id="preview-container">
+                <p style="font-size: 0.8em; color: #7f8c8d;">Preview Gambar:</p>
+                <img id="image-preview" src="#" alt="Preview">
+            </div>
+
+            <button type="submit" class="btn">MULAI KLASIFIKASI</button>
+        </form>
+
+        {% if result %}
+        <div class="result-box">
+            <h3>Hasil Analisis Akhir:</h3>
+            <img src="{{ url_for('static', filename='uploads/' + result.filename) }}" class="final-img">
+            <p style="font-size: 1.2em;">Jenis: <strong>{{ result.class.replace('_', ' ').title() }}</strong></p>
+            <p>Akurasi: <span style="color: #27ae60; font-weight: bold;">{{ result.confidence }}</span></p>
+            <a href="/" style="text-decoration: none; color: #3498db; font-size: 0.9em;">← Reset</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function previewImage(event) {
+            var reader = new FileReader();
+            reader.onload = function() {
+                var output = document.getElementById('image-preview');
+                var container = document.getElementById('preview-container');
+                output.src = reader.result;
+                container.style.display = "block"; // Tampilkan container preview
+            }
+            reader.readAsDataURL(event.target.files[0]);
+        }
+    </script>
+</body>
+</html>
